@@ -1,0 +1,216 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83% 33%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83% 33%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 221.2 83% 33%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 221.2 83% 33%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Entity Type Badges */
+  .badge-scholar {
+    @apply bg-blue-100 text-blue-800 border-blue-200;
+  }
+  .badge-institution {
+    @apply bg-purple-100 text-purple-800 border-purple-200;
+  }
+
+  /* Status Badges */
+  .status-pending {
+    @apply bg-rose-100 text-rose-800 border-rose-200;
+  }
+  .status-progress {
+    @apply bg-amber-100 text-amber-800 border-amber-200;
+  }
+  .status-approval {
+    @apply bg-sky-100 text-sky-800 border-sky-200;
+  }
+  .status-active {
+    @apply bg-emerald-100 text-emerald-800 border-emerald-200;
+  }
+  .status-rejected {
+    @apply bg-gray-100 text-gray-800 border-gray-200;
+  }
+
+  /* Tag Styles */
+  .tag-honors {
+    @apply bg-amber-50 text-amber-700 border-amber-200;
+  }
+  .tag-memberships {
+    @apply bg-blue-50 text-blue-700 border-blue-200;
+  }
+  .tag-rankings {
+    @apply bg-purple-50 text-purple-700 border-purple-200;
+  }
+  .tag-geographic {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+  }
+  .tag-research {
+    @apply bg-slate-100 text-slate-700 border-slate-200;
+  }
+
+  /* Card Hover Effect */
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    @apply shadow-card-hover -translate-y-0.5;
+  }
+
+  /* Form Section */
+  .form-section {
+    @apply border-b border-border pb-6 mb-6 last:border-0 last:pb-0 last:mb-0;
+  }
+  .form-section-title {
+    @apply text-sm font-semibold text-foreground uppercase tracking-wider mb-4;
+  }
+
+  /* Data Table */
+  .data-table th {
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+  }
+  .data-table td {
+    @apply text-sm;
+  }
+
+  /* Monospace for IDs */
+  .mono-id {
+    @apply font-mono text-xs text-muted-foreground;
+  }
+
+  /* Diff Styles */
+  .diff-added {
+    @apply bg-emerald-50 text-emerald-800 border-l-4 border-emerald-500;
+  }
+  .diff-removed {
+    @apply bg-rose-50 text-rose-800 border-l-4 border-rose-500 line-through;
+  }
+  .diff-modified {
+    @apply bg-amber-50 text-amber-800 border-l-4 border-amber-500;
+  }
+
+  /* Kanban Card */
+  .kanban-card {
+    @apply bg-white rounded-lg border border-border p-4 shadow-xs cursor-move transition-all duration-150;
+  }
+  .kanban-card:hover {
+    @apply shadow-md;
+  }
+  .kanban-card.dragging {
+    @apply shadow-card-hover rotate-2 scale-105;
+  }
+
+  /* Confidence Bar */
+  .confidence-high {
+    @apply bg-emerald-500;
+  }
+  .confidence-medium {
+    @apply bg-amber-500;
+  }
+  .confidence-low {
+    @apply bg-gray-400;
+  }
+
+  /* Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+}

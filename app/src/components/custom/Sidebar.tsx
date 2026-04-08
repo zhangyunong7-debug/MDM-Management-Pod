@@ -1,0 +1,188 @@
+import { useAppStore } from '@/store/appStore';
+import { cn } from '@/lib/utils';
+import { 
+  LayoutDashboard, 
+  Search, 
+  PlusCircle, 
+  AlertCircle, 
+  CheckCircle, 
+  History, 
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  Building2
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  badge?: number;
+}
+
+const navItems: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'search', label: 'Entity Search', icon: Search },
+  { id: 'create', label: 'Create New Entity', icon: PlusCircle },
+  { id: 'corrections', label: 'Data Correction', icon: AlertCircle, badge: 12 },
+  { id: 'approvals', label: 'Approval Center', icon: CheckCircle, badge: 8 },
+  { id: 'logs', label: 'Operation Logs', icon: History },
+  { id: 'settings', label: 'System Settings', icon: Settings },
+];
+
+export function Sidebar() {
+  const { 
+    currentPage, 
+    setCurrentPage, 
+    sidebarCollapsed, 
+    toggleSidebar,
+    dashboardKPI 
+  } = useAppStore();
+
+  const handleNavClick = (pageId: string) => {
+    setCurrentPage(pageId);
+  };
+
+  const getBadgeCount = (item: NavItem) => {
+    if (item.id === 'corrections') return dashboardKPI.pendingCorrections;
+    if (item.id === 'approvals') return dashboardKPI.pendingApprovals;
+    return item.badge;
+  };
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <aside
+        className={cn(
+          'fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] bg-white border-r border-border transition-all duration-300 ease-drawer',
+          sidebarCollapsed ? 'w-16' : 'w-64'
+        )}
+      >
+        <div className="flex flex-col h-full">
+          {/* Collapse Toggle */}
+          <div className="flex justify-end p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={toggleSidebar}
+            >
+              {sidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          {/* Logo Area (when expanded) */}
+          {!sidebarCollapsed && (
+            <div className="px-4 pb-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-academic-blue flex items-center justify-center">
+                  <GraduationCap className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    GARC
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Master Data
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <ScrollArea className="flex-1 py-2">
+            <nav className="space-y-1 px-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                const badgeCount = getBadgeCount(item);
+
+                const NavButton = (
+                  <button
+                    onClick={() => handleNavClick(item.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    <Icon className={cn('h-5 w-5 flex-shrink-0', isActive && 'text-primary')} />
+                    {!sidebarCollapsed && (
+                      <>
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {badgeCount && badgeCount > 0 && (
+                          <Badge 
+                            variant={isActive ? 'default' : 'secondary'}
+                            className="h-5 min-w-5 px-1.5 text-xs"
+                          >
+                            {badgeCount}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                    {sidebarCollapsed && badgeCount && badgeCount > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
+                        {badgeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+
+                if (sidebarCollapsed) {
+                  return (
+                    <Tooltip key={item.id}>
+                      <TooltipTrigger asChild>
+                        {NavButton}
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="flex items-center gap-2">
+                        {item.label}
+                        {badgeCount && badgeCount > 0 && (
+                          <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[10px]">
+                            {badgeCount}
+                          </Badge>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return NavButton;
+              })}
+            </nav>
+          </ScrollArea>
+
+          {/* Entity Type Indicator */}
+          {!sidebarCollapsed && (
+            <div className="p-4 border-t border-border">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Entity Types
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50">
+                    <GraduationCap className="h-3.5 w-3.5 text-blue-600" />
+                    <span className="text-xs text-blue-700">Scholar</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50">
+                    <Building2 className="h-3.5 w-3.5 text-purple-600" />
+                    <span className="text-xs text-purple-700">Institution</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </TooltipProvider>
+  );
+}
