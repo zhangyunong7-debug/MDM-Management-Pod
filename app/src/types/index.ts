@@ -5,7 +5,7 @@ export interface Entity {
   id: string;
   type: EntityType;
   name: string;
-  tags: Tag[];
+  tags: number[];
   lastUpdated: string;
   status: WorkflowStatus;
   createdAt: string;
@@ -13,19 +13,71 @@ export interface Entity {
   createdBy: string;
 }
 
+export interface ScholarEmail {
+  email: string;
+  isPrimary: boolean;
+}
+
+export interface ScholarAffiliation {
+  institutionName: string;
+  city: string;
+  country: string;
+  isPrimary?: boolean;
+  globalInstCode?: string;
+}
+
 export interface Scholar extends Entity {
   type: 'scholar';
+  globalScholarCode?: string;
+  firstName?: string;
+  lastName?: string;
+  nativeName?: string;
   email: string;
+  emails?: ScholarEmail[];
   orcid?: string;
   nationality?: string;
+  category?: string;
+  isVip?: boolean;
   currentAffiliation?: string;
   currentAffiliationId?: string;
+  affiliations?: ScholarAffiliation[];
   researchAreas: string[];
   honors: string[];
   memberships: string[];
   highestDegree?: string;
   phdYear?: number;
   biography?: string;
+  title?: string;
+  personHomepages?: { label?: string; url: string }[];
+  sciProfileUrl?: string;
+  researchFocus?: string;
+  description?: string;
+  hIndex?: number;
+  hIndexScopus?: number;
+  hIndexGoogle?: number;
+  hIndexSource?: string;
+  hIndexScopusUpdated?: string;
+  hIndexGoogleUpdated?: string;
+  hIndexUpdated?: string;
+  scopusAuthorId?: string;
+  googleScholarId?: string;
+  researchAreaDetails?: Record<string, string>;
+  publicationCount?: number;
+  subscriptionCount?: number;
+  vip_journal_entries?: VIPJournalEntry[];
+  awards?: Award[];
+}
+
+export interface Award {
+  award_name: string;
+  award_year: number;
+  award_page_url: string;
+}
+
+export interface VIPJournalEntry {
+  journal: string;
+  roles: string[];
+  special_issues: string[];
 }
 
 export interface Institution extends Entity {
@@ -207,4 +259,110 @@ export interface Toast {
   title: string;
   message?: string;
   duration?: number;
+}
+
+// ========================
+// Tag Management System Types
+// ========================
+
+// Extension Attribute Types
+export type ExtensionAttrType = 'BOOLEAN' | 'SCOPE' | 'SEVERITY' | 'YEAR_ATTR' | 'RANK' | 'SCORE';
+
+// Dimension Types
+export type Dimension = 'RISK' | 'Business Classification';
+
+// Sub-dimension Types for RISK
+export type RiskSubDimension = 'COMPLIANCE' | 'INTEGRITY' | 'SECURITY' | 'REPUTATION' | 'COMMERCIAL';
+
+// Sub-dimension Types for Business Classification
+export type BusinessSubDimension = 'QUALITY' | 'VALUE' | 'PREFERENCE' | 'RANKING' | 'STRATEGIC' | 'TYPE' | 'OPTOUT';
+
+// Extension Schema - supports different types with validation rules
+export interface ExtSchemaBoolean {
+  type: 'boolean';
+  duration?: string;
+}
+
+export interface ExtSchemaEnum {
+  type: 'enum';
+  values: string[];
+  auto_upgrade?: boolean;
+  threshold?: number;
+  duration?: string;
+}
+
+export interface ExtSchemaInteger {
+  type: 'integer';
+  min?: number;
+  max?: number;
+  required?: boolean;
+}
+
+export interface ExtSchemaDatePeriod {
+  type: 'date_period';
+  fields: ['start_date', 'end_date'];
+}
+
+export type ExtensionSchema = ExtSchemaBoolean | ExtSchemaEnum | ExtSchemaInteger | ExtSchemaDatePeriod;
+
+// Classification Definition - represents a tag definition
+export interface ClassificationDef {
+  id: number;
+  classCode: string;
+  className: string;
+  classDisplayName: string;
+  classDesc: string;
+  dimension: Dimension;
+  subDimension: RiskSubDimension | BusinessSubDimension;
+  extAttr: ExtensionAttrType;
+  extSchema: ExtensionSchema;
+  createdBy: string;
+  loadDate: string;
+  status: string | null;
+  hasRule?: boolean;
+}
+
+// Entity-Tag Assignment with extension attributes
+export interface TagAssignment {
+  id: string;
+  entityId: string;
+  entityType: EntityType;
+  tagId: number;
+  tagCode: string;
+  assignedBy: string;
+  assignedAt: string;
+  expiresAt?: string;
+  extValue?: TagExtensionValue;
+}
+
+export interface TagExtensionValue {
+  // For boolean type
+  booleanValue?: boolean;
+  // For enum type
+  enumValue?: string;
+  // For integer type (year, rank, score)
+  intValue?: number;
+  // For date_period type
+  startDate?: string;
+  endDate?: string;
+}
+
+// Tag with extension attributes for display
+export interface TagWithExt extends Tag {
+  classCode: string;
+  dimension: Dimension;
+  subDimension: string;
+  extAttr: ExtensionAttrType;
+  extSchema: ExtensionSchema;
+  hasRule?: boolean;
+}
+
+// Tag Statistics
+export interface TagStatistics {
+  tagId: number;
+  tagCode: string;
+  tagName: string;
+  scholarCount: number;
+  institutionCount: number;
+  totalCount: number;
 }

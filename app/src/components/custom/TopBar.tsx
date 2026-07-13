@@ -112,13 +112,17 @@ export function TopBar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white border-b border-border">
+    <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white/80 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between h-full px-4 lg:px-6">
         {/* Left: Logo & Search */}
         <div className="flex items-center gap-6 flex-1">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-academic-blue to-academic-blue-light flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                 style={{
+                   background: 'linear-gradient(135deg, hsl(213 100% 70%), hsl(217 91% 50%))',
+                   boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                 }}>
               <span className="text-white font-bold text-sm">G</span>
             </div>
             <div className="hidden lg:block">

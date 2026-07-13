@@ -1,28 +1,32 @@
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore, selectFilteredEntities } from '@/store/appStore';
 import { cn } from '@/lib/utils';
-import type { Entity } from '@/types';
-import { 
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  Download, 
+import type { Entity, Scholar, ClassificationDef } from '@/types';
+import {
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  Download,
   Plus,
   MoreHorizontal,
   GraduationCap,
-  Building2,
+  Landmark,
   X,
   Check,
   Edit,
   Eye,
-  FolderPlus
+  FolderPlus,
+  Shield,
+  Briefcase,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,25 +45,39 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { mockTags, countries, researchAreas } from '@/data/mock';
+import { countries, researchAreas } from '@/data/mock';
 
-const tagCategories = [
-  { id: 'honors', label: 'Honors & Awards', color: 'tag-honors' },
-  { id: 'memberships', label: 'Academic Memberships', color: 'tag-memberships' },
-  { id: 'rankings', label: 'Rankings & Tiers', color: 'tag-rankings' },
-  { id: 'geographic', label: 'Geographic Systems', color: 'tag-geographic' },
-  { id: 'research', label: 'Research Areas', color: 'tag-research' },
-];
+// Sub-dimension configuration with colors
+const subDimensionConfig: Record<string, {
+  label: string;
+  dimension: 'RISK' | 'Business Classification';
+  bgClass: string;
+  textClass: string;
+}> = {
+  COMPLIANCE: { label: 'Compliance', dimension: 'RISK', bgClass: 'bg-red-50', textClass: 'text-red-700 border-red-200' },
+  INTEGRITY: { label: 'Integrity', dimension: 'RISK', bgClass: 'bg-orange-50', textClass: 'text-orange-700 border-orange-200' },
+  SECURITY: { label: 'Security', dimension: 'RISK', bgClass: 'bg-amber-50', textClass: 'text-amber-700 border-amber-200' },
+  REPUTATION: { label: 'Reputation', dimension: 'RISK', bgClass: 'bg-yellow-50', textClass: 'text-yellow-700 border-yellow-200' },
+  COMMERCIAL: { label: 'Commercial', dimension: 'RISK', bgClass: 'bg-amber-50', textClass: 'text-amber-700 border-amber-200' },
+  QUALITY: { label: 'Quality', dimension: 'Business Classification', bgClass: 'bg-blue-50', textClass: 'text-blue-700 border-blue-200' },
+  VALUE: { label: 'Value', dimension: 'Business Classification', bgClass: 'bg-green-50', textClass: 'text-green-700 border-green-200' },
+  PREFERENCE: { label: 'Preference', dimension: 'Business Classification', bgClass: 'bg-teal-50', textClass: 'text-teal-700 border-teal-200' },
+  RANKING: { label: 'Ranking', dimension: 'Business Classification', bgClass: 'bg-indigo-50', textClass: 'text-indigo-700 border-indigo-200' },
+  STRATEGIC: { label: 'Strategic', dimension: 'Business Classification', bgClass: 'bg-violet-50', textClass: 'text-violet-700 border-violet-200' },
+  TYPE: { label: 'Type', dimension: 'Business Classification', bgClass: 'bg-purple-50', textClass: 'text-purple-700 border-purple-200' },
+  OPTOUT: { label: 'Opt-out', dimension: 'Business Classification', bgClass: 'bg-gray-50', textClass: 'text-gray-700 border-gray-200' },
+};
 
-function TagBadge({ tag, className }: { tag: { name: string; category: string }; className?: string }) {
-  const categoryStyle = tagCategories.find(c => c.id === tag.category)?.color || 'tag-research';
+function TagBadge({ def, className }: { def: ClassificationDef; className?: string }) {
+  const config = subDimensionConfig[def.subDimension] || { textClass: 'text-gray-700 border-gray-200', dimension: def.dimension };
   return (
     <span className={cn(
-      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-      categoryStyle,
+      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+      config.textClass,
       className
     )}>
-      {tag.name}
+      {def.dimension === 'RISK' ? <Shield className="h-3 w-3" /> : <Briefcase className="h-3 w-3" />}
+      {def.classDisplayName}
     </span>
   );
 }
@@ -75,7 +93,7 @@ function EntityTypeBadge({ type }: { type: 'scholar' | 'institution' }) {
   }
   return (
     <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-      <Building2 className="h-3 w-3 mr-1" />
+      <Landmark className="h-3 w-3 mr-1" />
       Institution
     </Badge>
   );
@@ -107,7 +125,8 @@ function TableView({
   onSelectId: (id: string) => void;
   onSelectAll: () => void;
 }) {
-  const { setSelectedEntity, setEntityDrawerOpen, setCurrentPage } = useAppStore();
+  const { setSelectedEntity, setEntityDrawerOpen, setCurrentPage, scholarClassDefs, institutionClassDefs } = useAppStore();
+  const allClassDefs = [...scholarClassDefs, ...institutionClassDefs];
 
   const allSelected = entities.length > 0 && selectedIds.length === entities.length;
   const someSelected = selectedIds.length > 0 && selectedIds.length < entities.length;
@@ -118,12 +137,12 @@ function TableView({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="rounded border overflow-hidden">
       <table className="w-full">
         <thead className="bg-muted/50">
           <tr>
             <th className="w-10 px-4 py-3">
-              <Checkbox 
+              <Checkbox
                 checked={allSelected}
                 ref={(ref) => {
                   if (ref) {
@@ -153,7 +172,7 @@ function TableView({
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-border [&_tr:nth-child(even)]:bg-muted/30">
           {entities.map((entity) => (
             <tr 
               key={entity.id} 
@@ -179,9 +198,10 @@ function TableView({
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1 flex-wrap">
-                  {entity.tags.slice(0, 3).map((tag) => (
-                    <TagBadge key={tag.id} tag={tag} />
-                  ))}
+                  {entity.tags.slice(0, 3).map((tagId) => {
+                    const def = allClassDefs.find((d) => d.id === tagId);
+                    return def ? <TagBadge key={tagId} def={def} /> : null;
+                  })}
                   {entity.tags.length > 3 && (
                     <Badge variant="outline" className="text-xs">
                       +{entity.tags.length - 3}
@@ -234,7 +254,8 @@ function CardView({
   selectedIds: string[];
   onSelectId: (id: string) => void;
 }) {
-  const { setSelectedEntity, setEntityDrawerOpen, setCurrentPage } = useAppStore();
+  const { setSelectedEntity, setEntityDrawerOpen, setCurrentPage, scholarClassDefs, institutionClassDefs } = useAppStore();
+  const allClassDefs = [...scholarClassDefs, ...institutionClassDefs];
 
   const handleViewDetails = (entity: Entity) => {
     setSelectedEntity(entity);
@@ -261,7 +282,7 @@ function CardView({
                 {entity.type === 'scholar' ? (
                   <GraduationCap className="h-6 w-6" />
                 ) : (
-                  <Building2 className="h-6 w-6" />
+                  <Landmark className="h-6 w-6" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -280,9 +301,10 @@ function CardView({
                   <EntityTypeBadge type={entity.type} />
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {entity.tags.map((tag) => (
-                    <TagBadge key={tag.id} tag={tag} />
-                  ))}
+                  {entity.tags.map((tagId) => {
+                    const def = allClassDefs.find((d) => d.id === tagId);
+                    return def ? <TagBadge key={tagId} def={def} /> : null;
+                  })}
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
@@ -322,21 +344,169 @@ function CardView({
   );
 }
 
+function ScholarTableView({
+  scholars,
+  selectedIds,
+  onSelectId,
+  onSelectAll,
+}: {
+  scholars: Scholar[];
+  selectedIds: string[];
+  onSelectId: (id: string) => void;
+  onSelectAll: () => void;
+}) {
+  const { setSelectedEntity, setEntityDrawerOpen, scholarClassDefs, institutionClassDefs } = useAppStore();
+  const allClassDefs = [...scholarClassDefs, ...institutionClassDefs];
+
+  const allSelected = scholars.length > 0 && selectedIds.length === scholars.length;
+  const someSelected = selectedIds.length > 0 && selectedIds.length < scholars.length;
+
+  const handleViewDetails = (scholar: Scholar) => {
+    setSelectedEntity(scholar);
+    setEntityDrawerOpen(true);
+  };
+
+  return (
+    <div className="rounded border overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="w-10 px-4 py-3">
+                <Checkbox
+                  checked={allSelected}
+                  ref={(ref) => {
+                    if (ref) {
+                      (ref as HTMLInputElement).indeterminate = someSelected;
+                    }
+                  }}
+                  onCheckedChange={onSelectAll}
+                />
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Entity Code
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Name
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Native Name
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Primary Email
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Institution
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Tags
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+                Status
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border [&_tr:nth-child(even)]:bg-muted/30">
+            {scholars.map((scholar) => (
+              <tr
+                key={scholar.id}
+                className={cn(
+                  'hover:bg-muted/50 transition-colors',
+                  selectedIds.includes(scholar.id) && 'bg-primary/5'
+                )}
+              >
+                <td className="px-4 py-3">
+                  <Checkbox
+                    checked={selectedIds.includes(scholar.id)}
+                    onCheckedChange={() => onSelectId(scholar.id)}
+                  />
+                </td>
+                <td className="px-4 py-3">
+                  <code className="text-xs font-mono text-muted-foreground">
+                    {scholar.globalScholarCode || scholar.id}
+                  </code>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="font-semibold text-sm">
+                    {scholar.lastName}{scholar.lastName && scholar.firstName ? ' ' : ''}{scholar.firstName}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm text-muted-foreground">
+                    {scholar.nativeName || '—'}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <a href={`mailto:${scholar.email}`} className="text-sm text-primary hover:underline">
+                    {scholar.email}
+                  </a>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm">{scholar.currentAffiliation || '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1 flex-wrap max-w-[200px]">
+                    {scholar.tags.slice(0, 2).map((tagId) => {
+                      const def = allClassDefs.find((d) => d.id === tagId);
+                      return def ? <TagBadge key={tagId} def={def} /> : null;
+                    })}
+                    {scholar.tags.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{scholar.tags.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-xs',
+                      scholar.status === 'active'
+                        ? 'text-green-700 border-green-200 bg-green-50'
+                        : 'text-orange-700 border-orange-200 bg-orange-50'
+                    )}
+                  >
+                    {scholar.status === 'active' ? 'Active' : 'PENDING_REVIEW'}
+                  </Badge>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <Button variant="ghost" size="sm" onClick={() => handleViewDetails(scholar)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export function EntitySearch() {
-  const { 
-    searchFilters, 
-    setSearchFilters, 
+  const {
+    searchFilters,
+    setSearchFilters,
     clearSearchFilters,
-    viewMode, 
+    viewMode,
     setViewMode,
     setCurrentPage,
-    addToast
+    addToast,
+    scholarClassDefs,
+    institutionClassDefs,
   } = useAppStore();
+
+  // Combine all classification definitions for filtering
+  const allClassDefs = [...scholarClassDefs, ...institutionClassDefs];
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [localQuery, setLocalQuery] = useState(searchFilters.query);
 
-  const filteredEntities = useAppStore(selectFilteredEntities);
+  const filteredEntities = useAppStore(useShallow(selectFilteredEntities));
 
   const handleSearch = () => {
     setSearchFilters({ query: localQuery });
@@ -380,14 +550,13 @@ export function EntitySearch() {
     setSelectedIds([]);
   };
 
-  const activeFiltersCount = 
-    (searchFilters.entityType !== 'all' ? 1 : 0) +
+  const activeFiltersCount =
     searchFilters.tags.length +
     searchFilters.countries.length +
     searchFilters.researchAreas.length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -400,6 +569,22 @@ export function EntitySearch() {
           <Plus className="mr-2 h-4 w-4" />
           New Entity
         </Button>
+      </div>
+
+      {/* Entity Type Switch */}
+      <div className="flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-2.5 w-fit border border-border">
+        <Landmark className={cn('h-4 w-4 transition-colors', searchFilters.entityType !== 'scholar' ? 'text-purple-600' : 'text-muted-foreground')} />
+        <span className={cn('text-sm font-medium transition-colors', searchFilters.entityType !== 'scholar' ? 'text-foreground' : 'text-muted-foreground')}>
+          Institution
+        </span>
+        <Switch
+          checked={searchFilters.entityType === 'scholar'}
+          onCheckedChange={(checked) => setSearchFilters({ entityType: checked ? 'scholar' : 'institution' })}
+        />
+        <span className={cn('text-sm font-medium transition-colors', searchFilters.entityType === 'scholar' ? 'text-foreground' : 'text-muted-foreground')}>
+          Scholar
+        </span>
+        <GraduationCap className={cn('h-4 w-4 transition-colors', searchFilters.entityType === 'scholar' ? 'text-blue-600' : 'text-muted-foreground')} />
       </div>
 
       {/* Search & Filters */}
@@ -467,39 +652,77 @@ export function EntitySearch() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {/* Tags */}
+                    {/* Classification Tags */}
                     <AccordionItem value="tags">
-                      <AccordionTrigger className="px-4 py-3">Tags</AccordionTrigger>
+                      <AccordionTrigger className="px-4 py-3">Classification Tags</AccordionTrigger>
                       <AccordionContent className="px-4 pb-3">
                         <div className="space-y-4">
-                          {tagCategories.map((category) => (
-                            <div key={category.id}>
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                                {category.label}
+                          {/* RISK Dimension */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Shield className="h-4 w-4 text-red-500" />
+                              <p className="text-xs font-medium text-red-600 uppercase tracking-wider">
+                                Risk Tags
                               </p>
-                              <div className="space-y-1">
-                                {mockTags
-                                  .filter((t) => t.category === category.id)
-                                  .map((tag) => (
-                                    <label key={tag.id} className="flex items-center gap-2 cursor-pointer">
-                                      <Checkbox 
-                                        checked={searchFilters.tags.includes(tag.id)}
-                                        onCheckedChange={(checked) => {
-                                          if (checked) {
-                                            setSearchFilters({ tags: [...searchFilters.tags, tag.id] });
-                                          } else {
-                                            setSearchFilters({ 
-                                              tags: searchFilters.tags.filter((id: string) => id !== tag.id) 
-                                            });
-                                          }
-                                        }}
-                                      />
-                                      <span className="text-sm">{tag.name}</span>
-                                    </label>
-                                  ))}
-                              </div>
                             </div>
-                          ))}
+                            <div className="space-y-1">
+                              {allClassDefs
+                                .filter((def) => def.dimension === 'RISK')
+                                .map((def) => (
+                                  <label key={def.id} className="flex items-center gap-2 cursor-pointer">
+                                    <Checkbox
+                                      checked={searchFilters.tags.includes(String(def.id))}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          setSearchFilters({ tags: [...searchFilters.tags, String(def.id)] });
+                                        } else {
+                                          setSearchFilters({
+                                            tags: searchFilters.tags.filter((id: string) => id !== String(def.id))
+                                          });
+                                        }
+                                      }}
+                                    />
+                                    <span className="text-sm">{def.classDisplayName}</span>
+                                    <Badge variant="outline" className="text-xs ml-auto">
+                                      {def.subDimension}
+                                    </Badge>
+                                  </label>
+                                ))}
+                            </div>
+                          </div>
+                          {/* Business Dimension */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Briefcase className="h-4 w-4 text-blue-500" />
+                              <p className="text-xs font-medium text-blue-600 uppercase tracking-wider">
+                                Business Tags
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              {allClassDefs
+                                .filter((def) => def.dimension === 'Business Classification')
+                                .map((def) => (
+                                  <label key={def.id} className="flex items-center gap-2 cursor-pointer">
+                                    <Checkbox
+                                      checked={searchFilters.tags.includes(String(def.id))}
+                                      onCheckedChange={(checked) => {
+                                        if (checked) {
+                                          setSearchFilters({ tags: [...searchFilters.tags, String(def.id)] });
+                                        } else {
+                                          setSearchFilters({
+                                            tags: searchFilters.tags.filter((id: string) => id !== String(def.id))
+                                          });
+                                        }
+                                      }}
+                                    />
+                                    <span className="text-sm">{def.classDisplayName}</span>
+                                    <Badge variant="outline" className="text-xs ml-auto">
+                                      {def.subDimension}
+                                    </Badge>
+                                  </label>
+                                ))}
+                            </div>
+                          </div>
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -583,27 +806,18 @@ export function EntitySearch() {
 
           {/* Active Filters */}
           {activeFiltersCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
               <span className="text-sm text-muted-foreground">Active filters:</span>
-              {searchFilters.entityType !== 'all' && (
-                <Badge variant="secondary" className="gap-1">
-                  Type: {searchFilters.entityType}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => setSearchFilters({ entityType: 'all' })}
-                  />
-                </Badge>
-              )}
               {searchFilters.tags.map((tagId: string) => {
-                const tag = mockTags.find((t) => t.id === tagId);
-                if (!tag) return null;
+                const def = allClassDefs.find((d) => String(d.id) === tagId);
+                if (!def) return null;
                 return (
                   <Badge key={tagId} variant="secondary" className="gap-1">
-                    {tag.name}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => setSearchFilters({ 
-                        tags: searchFilters.tags.filter((id: string) => id !== tagId) 
+                    {def.classDisplayName}
+                    <X
+                      className="h-3 w-3 cursor-pointer"
+                      onClick={() => setSearchFilters({
+                        tags: searchFilters.tags.filter((id: string) => id !== tagId)
                       })}
                     />
                   </Badge>
@@ -652,7 +866,7 @@ export function EntitySearch() {
 
       {/* Results */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <p className="text-sm text-muted-foreground">
             Showing {filteredEntities.length} result{filteredEntities.length !== 1 ? 's' : ''}
           </p>
@@ -669,6 +883,13 @@ export function EntitySearch() {
               Clear Filters
             </Button>
           </div>
+        ) : viewMode === 'table' && searchFilters.entityType === 'scholar' ? (
+          <ScholarTableView
+            scholars={filteredEntities as Scholar[]}
+            selectedIds={selectedIds}
+            onSelectId={toggleSelectId}
+            onSelectAll={toggleSelectAll}
+          />
         ) : viewMode === 'table' ? (
           <TableView 
             entities={filteredEntities}

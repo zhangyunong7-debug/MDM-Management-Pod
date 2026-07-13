@@ -1,69 +1,82 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Light Blue-Gray Background */
+    --background: 210 40% 97%;
+    --foreground: 222.2 47% 11%;
+    --card: 240 33% 99%;
+    --card-foreground: 222.2 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83% 33%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 222.2 47% 11%;
+
+    /* Primary - Design System Brand Blue #0156ce */
+    --primary: 217 100% 41%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light Blue Gray */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 217 50% 20%;
+
+    /* Muted */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 20% 50%;
+
+    /* Accent - Sky Blue */
+    --accent: 210 40% 96%;
+    --accent-foreground: 217 50% 20%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83% 33%;
-    --radius: 0.5rem;
+
+    /* Borders & Inputs */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 50%;
+
+    /* Sidebar - Clean White */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 221.2 83% 33%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 221.2 83% 33%;
+    --sidebar-foreground: 222.2 47% 11%;
+    --sidebar-primary: 217 91% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 217 50% 20%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 217 91% 50%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 217 50% 8%;
+    --foreground: 210 40% 95%;
+    --card: 217 50% 12%;
+    --card-foreground: 210 40% 95%;
+    --popover: 217 50% 12%;
+    --popover-foreground: 210 40% 95%;
+    --primary: 213 100% 60%;
+    --primary-foreground: 217 82% 10%;
+    --secondary: 217 50% 20%;
+    --secondary-foreground: 210 40% 95%;
+    --muted: 217 50% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 50% 20%;
+    --accent-foreground: 210 40% 95%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217.2 91.2% 59.8%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 224.3 76.3% 48%;
+    --border: 217 50% 22%;
+    --input: 217 50% 22%;
+    --ring: 213 100% 60%;
+    --sidebar-background: 217 60% 10%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 213 100% 60%;
+    --sidebar-primary-foreground: 217 82% 10%;
+    --sidebar-accent: 217 50% 20%;
+    --sidebar-accent-foreground: 210 40% 95%;
+    --sidebar-border: 217 50% 22%;
+    --sidebar-ring: 213 100% 60%;
   }
 }
 
@@ -85,24 +98,24 @@
     @apply bg-blue-100 text-blue-800 border-blue-200;
   }
   .badge-institution {
-    @apply bg-purple-100 text-purple-800 border-purple-200;
+    @apply bg-indigo-100 text-indigo-800 border-indigo-200;
   }
 
   /* Status Badges */
   .status-pending {
-    @apply bg-rose-100 text-rose-800 border-rose-200;
+    @apply bg-red-50 text-red-700 border-red-200;
   }
   .status-progress {
-    @apply bg-amber-100 text-amber-800 border-amber-200;
+    @apply bg-amber-50 text-amber-700 border-amber-200;
   }
   .status-approval {
-    @apply bg-sky-100 text-sky-800 border-sky-200;
+    @apply bg-blue-50 text-blue-700 border-blue-200;
   }
   .status-active {
-    @apply bg-emerald-100 text-emerald-800 border-emerald-200;
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
   }
   .status-rejected {
-    @apply bg-gray-100 text-gray-800 border-gray-200;
+    @apply bg-gray-100 text-gray-700 border-gray-200;
   }
 
   /* Tag Styles */
@@ -127,7 +140,7 @@
     @apply transition-all duration-200 ease-out;
   }
   .card-hover:hover {
-    @apply shadow-card-hover -translate-y-0.5;
+    @apply shadow-lg -translate-y-0.5;
   }
 
   /* Form Section */
@@ -140,7 +153,7 @@
 
   /* Data Table */
   .data-table th {
-    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted/50;
   }
   .data-table td {
     @apply text-sm;
@@ -156,10 +169,10 @@
     @apply bg-emerald-50 text-emerald-800 border-l-4 border-emerald-500;
   }
   .diff-removed {
-    @apply bg-rose-50 text-rose-800 border-l-4 border-rose-500 line-through;
+    @apply bg-red-50 text-red-800 border-l-4 border-red-500 line-through;
   }
   .diff-modified {
-    @apply bg-amber-50 text-amber-800 border-l-4 border-amber-500;
+    @apply bg-blue-50 text-blue-800 border-l-4 border-blue-500;
   }
 
   /* Kanban Card */
@@ -170,12 +183,12 @@
     @apply shadow-md;
   }
   .kanban-card.dragging {
-    @apply shadow-card-hover rotate-2 scale-105;
+    @apply shadow-lg rotate-2 scale-105;
   }
 
   /* Confidence Bar */
   .confidence-high {
-    @apply bg-emerald-500;
+    @apply bg-blue-500;
   }
   .confidence-medium {
     @apply bg-amber-500;

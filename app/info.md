@@ -1,3 +1,14 @@
+---
+AIGC:
+    ContentProducer: Minimax Agent AI
+    ContentPropagator: Minimax Agent AI
+    Label: AIGC
+    ProduceID: "00000000000000000000000000000000"
+    PropagateID: "00000000000000000000000000000000"
+    ReservedCode1: 3046022100acc96c34954b4040818b14e581870fef577acec4746b5e6a1a2a5a61f26f851202210089203ce8319fe16f679defdf965283fc9960d48c056efd3a4b42f599ad1e9b31
+    ReservedCode2: 304502205ae5e5b437737e4a752675033bdc932e302b93f78b140ad1779541953a70e530022100d73dc8fb0e0c3d49ff12fdd2c0dc703dadffd271b9f3e11fc33f027f7a16d3ca
+---
+
 Using Node.js 20, Tailwind CSS v3.4.19, and Vite v7.2.4
 
 Tailwind CSS has been set up with the shadcn theme

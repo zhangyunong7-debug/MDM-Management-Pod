@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import type { ApprovalRequest, EntityChange } from '@/types';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
   MessageSquare,
   ArrowUpRight,
   User,
-  Building2,
+  Landmark,
   ChevronRight,
   FileText,
   Link2,
@@ -252,7 +252,7 @@ function ApprovalDetailDialog({
                       </div>
                       <div className="text-center opacity-50">
                         <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
-                          <Building2 className="h-8 w-8 text-purple-600" />
+                          <Landmark className="h-8 w-8 text-purple-600" />
                         </div>
                         <p className="text-sm font-medium">Harvard University</p>
                       </div>
@@ -264,7 +264,7 @@ function ApprovalDetailDialog({
                       </div>
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-2">
-                          <Building2 className="h-8 w-8 text-purple-600" />
+                          <Landmark className="h-8 w-8 text-purple-600" />
                         </div>
                         <p className="text-sm font-medium">MIT</p>
                         <p className="text-xs text-muted-foreground">New Affiliation</p>
@@ -456,7 +456,7 @@ export function ApprovalCenter() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -481,7 +481,7 @@ export function ApprovalCenter() {
           <TabsTrigger value="my_submissions">My Submissions</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
+        <TabsContent value={activeTab} className="mt-4">
           {filteredRequests.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -491,7 +491,7 @@ export function ApprovalCenter() {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredRequests.map((request: ApprovalRequest) => {
                 const typeConfig = approvalTypeConfig[request.type];
                 const TypeIcon = typeConfig.icon;
@@ -533,7 +533,7 @@ export function ApprovalCenter() {
                                   {request.entityType === 'scholar' ? (
                                     <User className="h-3.5 w-3.5" />
                                   ) : (
-                                    <Building2 className="h-3.5 w-3.5" />
+                                    <Landmark className="h-3.5 w-3.5" />
                                   )}
                                   {request.entityType}
                                 </span>

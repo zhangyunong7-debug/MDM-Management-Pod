@@ -1,16 +1,16 @@
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
-import { 
-  AlertCircle, 
-  CheckCircle, 
-  XCircle, 
+import {
+  AlertCircle,
+  CheckCircle,
+  XCircle,
   TrendingUp,
   Plus,
   Search,
   AlertTriangle,
   Clock,
   User,
-  Building2,
+  Landmark,
   GraduationCap,
   ArrowRight
 } from 'lucide-react';
@@ -32,9 +32,9 @@ interface KPICardProps {
 const iconBgStyles = {
   blue: 'bg-blue-100 text-blue-600',
   amber: 'bg-amber-100 text-amber-600',
-  rose: 'bg-rose-100 text-rose-600',
+  rose: 'bg-red-100 text-red-600',
   emerald: 'bg-emerald-100 text-emerald-600',
-  purple: 'bg-purple-100 text-purple-600',
+  purple: 'bg-indigo-100 text-indigo-600',
 };
 
 function KPICard({ title, value, icon: Icon, trend, trendUp, color, onClick }: KPICardProps) {
@@ -46,7 +46,7 @@ function KPICard({ title, value, icon: Icon, trend, trendUp, color, onClick }: K
       )}
       onClick={onClick}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -153,7 +153,7 @@ function ActivityTimeline() {
                         {activity.entityType === 'scholar' ? (
                           <GraduationCap className="h-3 w-3 mr-1" />
                         ) : (
-                          <Building2 className="h-3 w-3 mr-1" />
+                          <Landmark className="h-3 w-3 mr-1" />
                         )}
                         {activity.entityName}
                       </Badge>
@@ -183,7 +183,7 @@ function QuickActions() {
     {
       label: 'New Institution',
       description: 'Add a new institution',
-      icon: Building2,
+      icon: Landmark,
       color: 'purple' as const,
       onClick: () => setCurrentPage('create'),
     },
@@ -245,7 +245,7 @@ function DataQualityScore() {
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Data Quality Score</p>
@@ -297,7 +297,7 @@ export function Dashboard() {
   const { dashboardKPI, setCurrentPage } = useAppStore();
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -346,7 +346,7 @@ export function Dashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Activity Timeline */}
         <div className="lg:col-span-2">
           <ActivityTimeline />
@@ -365,7 +365,7 @@ export function Dashboard() {
           <CardDescription>Overview of entities in the system</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-blue-50">
                 <GraduationCap className="h-6 w-6 text-blue-600" />
@@ -376,8 +376,8 @@ export function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-purple-50">
-                <Building2 className="h-6 w-6 text-purple-600" />
+              <div className="p-3 rounded-lg bg-indigo-50">
+                <Landmark className="h-6 w-6 text-indigo-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">386</p>

@@ -1,17 +1,19 @@
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  Search, 
-  PlusCircle, 
-  AlertCircle, 
-  CheckCircle, 
-  History, 
+import {
+  LayoutDashboard,
+  Search,
+  PlusCircle,
+  AlertCircle,
+  CheckCircle,
+  History,
   Settings,
   ChevronLeft,
   ChevronRight,
   GraduationCap,
-  Building2
+  Landmark,
+  Tags,
+  TagIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,17 +33,18 @@ const navItems: NavItem[] = [
   { id: 'create', label: 'Create New Entity', icon: PlusCircle },
   { id: 'corrections', label: 'Data Correction', icon: AlertCircle, badge: 12 },
   { id: 'approvals', label: 'Approval Center', icon: CheckCircle, badge: 8 },
+  { id: 'tags', label: 'Tag Management', icon: TagIcon },
   { id: 'logs', label: 'Operation Logs', icon: History },
   { id: 'settings', label: 'System Settings', icon: Settings },
 ];
 
 export function Sidebar() {
-  const { 
-    currentPage, 
-    setCurrentPage, 
-    sidebarCollapsed, 
+  const {
+    currentPage,
+    setCurrentPage,
+    sidebarCollapsed,
     toggleSidebar,
-    dashboardKPI 
+    dashboardKPI
   } = useAppStore();
 
   const handleNavClick = (pageId: string) => {
@@ -58,7 +61,8 @@ export function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] bg-white border-r border-border transition-all duration-300 ease-drawer',
+          'fixed left-0 top-16 z-30 h-[calc(100vh-4rem)] transition-all duration-300 ease-drawer',
+          'bg-white border-r border-border',
           sidebarCollapsed ? 'w-16' : 'w-64'
         )}
       >
@@ -68,7 +72,7 @@ export function Sidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
               onClick={toggleSidebar}
             >
               {sidebarCollapsed ? (
@@ -81,9 +85,13 @@ export function Sidebar() {
 
           {/* Logo Area (when expanded) */}
           {!sidebarCollapsed && (
-            <div className="px-4 pb-4 border-b border-border">
+            <div className="px-4 pb-4 mb-2 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-academic-blue flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                     style={{
+                       background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                       boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)'
+                     }}>
                   <GraduationCap className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -99,31 +107,34 @@ export function Sidebar() {
           )}
 
           {/* Navigation */}
-          <ScrollArea className="flex-1 py-2">
-            <nav className="space-y-1 px-2">
+          <ScrollArea className="flex-1 px-2">
+            <nav className="space-y-0.5">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPage === item.id;
                 const badgeCount = getBadgeCount(item);
 
-                const NavButton = (
+                const navButton = (
                   <button
                     onClick={() => handleNavClick(item.id)}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group',
                       isActive
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
                   >
-                    <Icon className={cn('h-5 w-5 flex-shrink-0', isActive && 'text-primary')} />
+                    <Icon className={cn('h-5 w-5 flex-shrink-0 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground')} />
                     {!sidebarCollapsed && (
                       <>
                         <span className="flex-1 text-left">{item.label}</span>
                         {badgeCount && badgeCount > 0 && (
-                          <Badge 
+                          <Badge
                             variant={isActive ? 'default' : 'secondary'}
-                            className="h-5 min-w-5 px-1.5 text-xs"
+                            className={cn(
+                              'h-5 min-w-5 px-1.5 text-xs font-medium',
+                              isActive ? 'bg-primary text-primary-foreground' : ''
+                            )}
                           >
                             {badgeCount}
                           </Badge>
@@ -131,7 +142,8 @@ export function Sidebar() {
                       </>
                     )}
                     {sidebarCollapsed && badgeCount && badgeCount > 0 && (
-                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] text-primary-foreground flex items-center justify-center">
+                      <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full text-[10px] text-white flex items-center justify-center font-medium"
+                            style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
                         {badgeCount}
                       </span>
                     )}
@@ -142,7 +154,7 @@ export function Sidebar() {
                   return (
                     <Tooltip key={item.id}>
                       <TooltipTrigger asChild>
-                        {NavButton}
+                        {navButton}
                       </TooltipTrigger>
                       <TooltipContent side="right" className="flex items-center gap-2">
                         {item.label}
@@ -156,26 +168,26 @@ export function Sidebar() {
                   );
                 }
 
-                return NavButton;
+                return <div key={item.id}>{navButton}</div>;
               })}
             </nav>
           </ScrollArea>
 
           {/* Entity Type Indicator */}
           {!sidebarCollapsed && (
-            <div className="p-4 border-t border-border">
+            <div className="p-4 mt-auto border-t border-border">
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Entity Types
                 </p>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50">
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-blue-50">
                     <GraduationCap className="h-3.5 w-3.5 text-blue-600" />
                     <span className="text-xs text-blue-700">Scholar</span>
                   </div>
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50">
-                    <Building2 className="h-3.5 w-3.5 text-purple-600" />
-                    <span className="text-xs text-purple-700">Institution</span>
+                  <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-indigo-50">
+                    <Landmark className="h-3.5 w-3.5 text-indigo-600" />
+                    <span className="text-xs text-indigo-700">Institution</span>
                   </div>
                 </div>
               </div>

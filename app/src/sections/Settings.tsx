@@ -56,7 +56,7 @@ export function Settings() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">System Settings</h1>
@@ -65,7 +65,7 @@ export function Settings() {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs defaultValue="profile" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 lg:w-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -86,7 +86,7 @@ export function Settings() {
                 Update your personal information and profile details
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
@@ -127,7 +127,7 @@ export function Settings() {
                 Configure how and when you receive notifications
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="space-y-4">
                 <h4 className="text-sm font-medium">Delivery Methods</h4>
                 <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ export function Settings() {
                 Customize your language, timezone, and display preferences
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Language</Label>
@@ -331,7 +331,7 @@ export function Settings() {
                 Manage your account security and authentication
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Two-Factor Authentication</p>
@@ -401,7 +401,7 @@ export function Settings() {
                 View system status and configuration
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">System Version</p>

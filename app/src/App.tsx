@@ -8,6 +8,7 @@ import { DataCorrection } from '@/sections/DataCorrection';
 import { ApprovalCenter } from '@/sections/ApprovalCenter';
 import { OperationLogs } from '@/sections/OperationLogs';
 import { Settings } from '@/sections/Settings';
+import { TagManagement } from '@/sections/TagManagement';
 
 function App() {
   const { currentPage } = useAppStore();
@@ -24,6 +25,8 @@ function App() {
         return <DataCorrection />;
       case 'approvals':
         return <ApprovalCenter />;
+      case 'tags':
+        return <TagManagement />;
       case 'logs':
         return <OperationLogs />;
       case 'settings':

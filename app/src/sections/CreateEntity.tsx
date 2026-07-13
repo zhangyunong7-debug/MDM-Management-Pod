@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
-import type { Scholar, Institution, Tag } from '@/types';
-import { 
-  Save, 
-  Send, 
-  X, 
-  Upload, 
+import type { Scholar, Institution, Tag, ClassificationDef, TagExtensionValue, ExtSchemaEnum } from '@/types';
+import {
+  Save,
+  Send,
+  X,
+  Upload,
   Download,
   Check,
   GraduationCap,
-  Building2,
+  Landmark,
   User,
   Mail,
   Globe,
@@ -18,13 +18,24 @@ import {
   Calendar,
   Award,
   BookOpen,
-  Search
+  Search,
+  Tag as TagIcon,
+  Shield,
+  AlertTriangle,
+  Star,
+  Briefcase,
+  Target,
+  TrendingUp,
+  Layers,
+  Flag,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -40,15 +51,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { mockTags, countries, researchAreas, degrees, institutionTypes, mockInstitutions } from '@/data/mock';
 
-const tagCategories = [
-  { id: 'honors', label: 'Honors & Awards', color: 'tag-honors' },
-  { id: 'memberships', label: 'Academic Memberships', color: 'tag-memberships' },
-  { id: 'rankings', label: 'Rankings & Tiers', color: 'tag-rankings' },
-  { id: 'geographic', label: 'Geographic Systems', color: 'tag-geographic' },
-  { id: 'research', label: 'Research Areas', color: 'tag-research' },
-];
+// Sub-dimension configuration with icons and colors
+const subDimensionConfig: Record<string, {
+  label: string;
+  icon: React.ElementType;
+  dimension: 'RISK' | 'Business Classification';
+  colorClass: string;
+  bgClass: string;
+  borderClass: string;
+}> = {
+  // Risk sub-dimensions
+  COMPLIANCE: { label: 'Compliance', icon: Shield, dimension: 'RISK', colorClass: 'text-red-600', bgClass: 'bg-red-50', borderClass: 'border-red-200' },
+  INTEGRITY: { label: 'Integrity', icon: AlertTriangle, dimension: 'RISK', colorClass: 'text-orange-600', bgClass: 'bg-orange-50', borderClass: 'border-orange-200' },
+  SECURITY: { label: 'Security', icon: Shield, dimension: 'RISK', colorClass: 'text-amber-600', bgClass: 'bg-amber-50', borderClass: 'border-amber-200' },
+  REPUTATION: { label: 'Reputation', icon: Star, dimension: 'RISK', colorClass: 'text-yellow-600', bgClass: 'bg-yellow-50', borderClass: 'border-yellow-200' },
+  COMMERCIAL: { label: 'Commercial', icon: Briefcase, dimension: 'RISK', colorClass: 'text-amber-700', bgClass: 'bg-amber-50', borderClass: 'border-amber-200' },
+  // Business sub-dimensions
+  QUALITY: { label: 'Quality', icon: Star, dimension: 'Business Classification', colorClass: 'text-blue-600', bgClass: 'bg-blue-50', borderClass: 'border-blue-200' },
+  VALUE: { label: 'Value', icon: TrendingUp, dimension: 'Business Classification', colorClass: 'text-green-600', bgClass: 'bg-green-50', borderClass: 'border-green-200' },
+  PREFERENCE: { label: 'Preference', icon: Target, dimension: 'Business Classification', colorClass: 'text-teal-600', bgClass: 'bg-teal-50', borderClass: 'border-teal-200' },
+  RANKING: { label: 'Ranking', icon: TrendingUp, dimension: 'Business Classification', colorClass: 'text-indigo-600', bgClass: 'bg-indigo-50', borderClass: 'border-indigo-200' },
+  STRATEGIC: { label: 'Strategic', icon: Target, dimension: 'Business Classification', colorClass: 'text-violet-600', bgClass: 'bg-violet-50', borderClass: 'border-violet-200' },
+  TYPE: { label: 'Type', icon: Layers, dimension: 'Business Classification', colorClass: 'text-purple-600', bgClass: 'bg-purple-50', borderClass: 'border-purple-200' },
+  OPTOUT: { label: 'Opt-out', icon: Flag, dimension: 'Business Classification', colorClass: 'text-gray-600', bgClass: 'bg-gray-50', borderClass: 'border-gray-200' },
+};
+
+// Extension value types
+interface AssignedTag {
+  tagId: number;
+  tagCode: string;
+  tagName: string;
+  subDimension: string;
+  extValue?: TagExtensionValue;
+}
 
 interface FormFieldProps {
   label: string;
@@ -72,125 +110,400 @@ function FormField({ label, required, error, children, hint }: FormFieldProps) {
   );
 }
 
-function TagSelector({ 
-  selectedTags, 
-  onChange, 
-  category 
-}: { 
-  selectedTags: string[]; 
-  onChange: (tags: string[]) => void;
-  category?: string;
-}) {
-  const availableTags = category 
-    ? mockTags.filter((t) => t.category === category)
-    : mockTags;
+// Render extension input based on schema type
+function renderExtInput(
+  def: ClassificationDef,
+  value: TagExtensionValue | undefined,
+  onChange: (val: TagExtensionValue) => void
+) {
+  if (def.extSchema.type === 'boolean') {
+    return (
+      <div className="flex items-center gap-2">
+        <Checkbox
+          checked={value?.booleanValue || false}
+          onCheckedChange={(checked) => onChange({ booleanValue: !!checked })}
+        />
+        <Label className="text-sm">Enabled</Label>
+      </div>
+    );
+  }
 
-  const toggleTag = (tagId: string) => {
-    if (selectedTags.includes(tagId)) {
-      onChange(selectedTags.filter((id) => id !== tagId));
-    } else {
-      onChange([...selectedTags, tagId]);
+  if (def.extSchema.type === 'enum') {
+    const enumSchema = def.extSchema as ExtSchemaEnum;
+    return (
+      <Select
+        value={value?.enumValue || ''}
+        onValueChange={(v) => onChange({ enumValue: v })}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select value" />
+        </SelectTrigger>
+        <SelectContent>
+          {enumSchema.values.map((v) => (
+            <SelectItem key={v} value={v}>
+              {v}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (def.extSchema.type === 'integer') {
+    return (
+      <Input
+        type="number"
+        value={value?.intValue || ''}
+        onChange={(e) => onChange({ intValue: parseInt(e.target.value) })}
+        min={def.extSchema.min}
+        max={def.extSchema.max}
+        placeholder={`${def.extSchema.min} - ${def.extSchema.max}`}
+      />
+    );
+  }
+
+  if (def.extSchema.type === 'date_period') {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs">Start Date</Label>
+          <Input
+            type="date"
+            value={value?.startDate || ''}
+            onChange={(e) => onChange({ ...value, startDate: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label className="text-xs">End Date</Label>
+          <Input
+            type="date"
+            value={value?.endDate || ''}
+            onChange={(e) => onChange({ ...value, endDate: e.target.value })}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// Assign Tag Component - groups by sub_dimension
+function AssignTagSelector({
+  entityType,
+  assignedTags,
+  onChange,
+  classDefs,
+}: {
+  entityType: 'scholar' | 'institution';
+  assignedTags: AssignedTag[];
+  onChange: (tags: AssignedTag[]) => void;
+  classDefs: ClassificationDef[];
+}) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDefIds, setSelectedDefIds] = useState<number[]>([]);
+  const [extValues, setExtValues] = useState<Record<number, TagExtensionValue>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Group classDefs by sub_dimension
+  const groupedBySubDimension = classDefs.reduce((acc, def) => {
+    if (!acc[def.subDimension]) {
+      acc[def.subDimension] = [];
     }
+    acc[def.subDimension].push(def);
+    return acc;
+  }, {} as Record<string, ClassificationDef[]>);
+
+  // Filter by search query
+  const filteredGroupedDefs = Object.entries(groupedBySubDimension).reduce((acc, [subDim, defs]) => {
+    const filtered = defs.filter((def) => {
+      const matchesSearch =
+        def.classDisplayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        def.classCode.toLowerCase().includes(searchQuery.toLowerCase());
+      const notAssigned = !assignedTags.some((t) => t.tagId === def.id);
+      return matchesSearch && notAssigned;
+    });
+    if (filtered.length > 0) {
+      acc[subDim] = filtered;
+    }
+    return acc;
+  }, {} as Record<string, ClassificationDef[]>);
+
+  const handleTagToggle = (defId: number) => {
+    setSelectedDefIds((prev) =>
+      prev.includes(defId) ? prev.filter((id) => id !== defId) : [...prev, defId]
+    );
   };
 
+  const handleExtValueChange = (defId: number, value: TagExtensionValue) => {
+    setExtValues((prev) => ({ ...prev, [defId]: value }));
+  };
+
+  const handleAssign = () => {
+    const newTags: AssignedTag[] = selectedDefIds.map((defId) => {
+      const def = classDefs.find((d) => d.id === defId)!;
+      return {
+        tagId: def.id,
+        tagCode: def.classCode,
+        tagName: def.classDisplayName,
+        subDimension: def.subDimension,
+        extValue: extValues[defId],
+      };
+    });
+
+    onChange([...assignedTags, ...newTags]);
+    setSelectedDefIds([]);
+    setExtValues({});
+    setIsDialogOpen(false);
+  };
+
+  const handleRemoveTag = (tagId: number) => {
+    onChange(assignedTags.filter((t) => t.tagId !== tagId));
+  };
+
+  // Separate by dimension for display
+  const riskTags = assignedTags.filter((t) => {
+    const def = classDefs.find((d) => d.id === t.tagId);
+    return def?.dimension === 'RISK';
+  });
+  const businessTags = assignedTags.filter((t) => {
+    const def = classDefs.find((d) => d.id === t.tagId);
+    return def?.dimension === 'Business Classification';
+  });
+
   return (
-    <div className="space-y-3">
-      {category ? (
-        <div className="flex flex-wrap gap-2">
-          {availableTags.map((tag) => (
-            <button
-              key={tag.id}
-              type="button"
-              onClick={() => toggleTag(tag.id)}
-              className={cn(
-                'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition-colors',
-                selectedTags.includes(tag.id)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background hover:bg-muted border-border'
-              )}
-            >
-              {selectedTags.includes(tag.id) && <Check className="h-3 w-3" />}
-              {tag.name}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {tagCategories.map((cat) => {
-            const catTags = mockTags.filter((t) => t.category === cat.id);
-            const selectedInCat = selectedTags.filter((id) => 
-              catTags.some((t) => t.id === id)
-            );
-            
-            return (
-              <div key={cat.id}>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  {cat.label}
-                  {selectedInCat.length > 0 && (
-                    <span className="ml-2 text-primary">({selectedInCat.length})</span>
-                  )}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {catTags.map((tag) => (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() => toggleTag(tag.id)}
-                      className={cn(
-                        'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border transition-colors',
-                        selectedTags.includes(tag.id)
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-background hover:bg-muted border-border'
-                      )}
-                    >
-                      {selectedTags.includes(tag.id) && <Check className="h-3 w-3" />}
-                      {tag.name}
-                    </button>
-                  ))}
-                </div>
+    <>
+      <div className="space-y-4">
+        {/* Display Assigned Tags by Dimension */}
+        <div className="space-y-3">
+          {/* RISK Tags */}
+          {riskTags.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-medium text-red-600">Risk Tags</span>
               </div>
-            );
-          })}
+              <div className="flex flex-wrap gap-2">
+                {riskTags.map((tag) => (
+                  <div
+                    key={tag.tagId}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-red-50 border border-red-200"
+                  >
+                    <span className="text-red-700">{tag.tagName}</span>
+                    {tag.extValue && (
+                      <span className="text-xs text-red-500 ml-1">
+                        {tag.extValue.booleanValue !== undefined
+                          ? tag.extValue.booleanValue.toString()
+                          : tag.extValue.enumValue || tag.extValue.intValue?.toString() || ''}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag.tagId)}
+                      className="ml-1 hover:bg-red-100 rounded"
+                    >
+                      <X className="h-3 w-3 text-red-500" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Business Tags */}
+          {businessTags.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium text-blue-600">Business Tags</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {businessTags.map((tag) => (
+                  <div
+                    key={tag.tagId}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-blue-50 border border-blue-200"
+                  >
+                    <span className="text-blue-700">{tag.tagName}</span>
+                    {tag.extValue && (
+                      <span className="text-xs text-blue-500 ml-1">
+                        {tag.extValue.booleanValue !== undefined
+                          ? tag.extValue.booleanValue.toString()
+                          : tag.extValue.enumValue || tag.extValue.intValue?.toString() || ''}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag.tagId)}
+                      className="ml-1 hover:bg-blue-100 rounded"
+                    >
+                      <X className="h-3 w-3 text-blue-500" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {assignedTags.length === 0 && (
+            <p className="text-sm text-muted-foreground">No tags assigned yet</p>
+          )}
         </div>
-      )}
-    </div>
+
+        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(true)}>
+          <TagIcon className="mr-2 h-4 w-4" />
+          Assign Tags
+        </Button>
+      </div>
+
+      {/* Assign Tag Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Assign Tags to {entityType === 'scholar' ? 'Scholar' : 'Institution'}</DialogTitle>
+            <DialogDescription>
+              Select tags to assign. Tags are grouped by sub-dimension with different colors for Risk vs Business tags.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 min-h-0 flex flex-col">
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search available tags..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+
+            {/* Tags grouped by sub-dimension */}
+            <ScrollArea className="flex-1">
+              <div className="space-y-4 pr-4">
+                {Object.entries(filteredGroupedDefs).map(([subDim, defs]) => {
+                  const config = subDimensionConfig[subDim] || {
+                    label: subDim,
+                    icon: TagIcon,
+                    dimension: 'Business Classification' as const,
+                    colorClass: 'text-gray-600',
+                    bgClass: 'bg-gray-50',
+                    borderClass: 'border-gray-200',
+                  };
+                  const Icon = config.icon;
+
+                  return (
+                    <div key={subDim} className={cn('rounded-lg p-3', config.bgClass, config.borderClass)}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon className={cn('h-4 w-4', config.colorClass)} />
+                        <span className={cn('text-sm font-medium', config.colorClass)}>
+                          {config.label}
+                        </span>
+                        <Badge variant="outline" className="text-xs ml-auto">
+                          {config.dimension}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {defs.map((def) => (
+                          <div
+                            key={def.id}
+                            className={cn(
+                              'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-colors cursor-pointer',
+                              selectedDefIds.includes(def.id)
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-white hover:bg-muted border-border'
+                            )}
+                            onClick={() => handleTagToggle(def.id)}
+                          >
+                            {selectedDefIds.includes(def.id) && <Check className="h-3 w-3" />}
+                            <span>{def.classDisplayName}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Extension inputs for selected tags in this sub-dimension */}
+                      {selectedDefIds.some((id) => defs.some((d) => d.id === id)) && (
+                        <div className="mt-3 pt-3 border-t border-border space-y-3">
+                          {defs
+                            .filter((def) => selectedDefIds.includes(def.id))
+                            .map((def) => (
+                              <div key={def.id} className="bg-white rounded-lg p-3">
+                                <Label className="text-xs text-muted-foreground mb-1 block">
+                                  {def.classDisplayName} - {def.extAttr}
+                                </Label>
+                                {renderExtInput(def, extValues[def.id], (val) =>
+                                  handleExtValueChange(def.id, val)
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {Object.keys(filteredGroupedDefs).length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No available tags found
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAssign} disabled={selectedDefIds.length === 0}>
+              Assign {selectedDefIds.length} Tag(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
-function ScholarForm({ 
-  data, 
-  onChange, 
-  errors 
-}: { 
-  data: Partial<Scholar>; 
+function ScholarForm({
+  data,
+  onChange,
+  errors,
+  assignedTags,
+  onAssignedTagsChange,
+  classDefs,
+}: {
+  data: Partial<Scholar>;
   onChange: (data: Partial<Scholar>) => void;
   errors: Record<string, string>;
+  assignedTags: AssignedTag[];
+  onAssignedTagsChange: (tags: AssignedTag[]) => void;
+  classDefs: ClassificationDef[];
 }) {
   const updateField = (field: string, value: any) => {
     onChange({ ...data, [field]: value });
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Basic Information */}
       <div className="form-section">
         <h3 className="form-section-title flex items-center gap-2">
           <User className="h-4 w-4" />
           Basic Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField label="Full Name" required error={errors.fullName}>
-            <Input 
+            <Input
               value={data.name || ''}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="e.g., Dr. Elena Vance"
             />
           </FormField>
-          
+
           <FormField label="Official Email" required error={errors.email}>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
+              <Input
                 type="email"
                 className="pl-10"
                 value={data.email || ''}
@@ -199,18 +512,18 @@ function ScholarForm({
               />
             </div>
           </FormField>
-          
+
           <FormField label="ORCID iD" hint="Format: 0000-0000-0000-0000">
-            <Input 
+            <Input
               value={data.orcid || ''}
               onChange={(e) => updateField('orcid', e.target.value)}
               placeholder="0000-0000-0000-0000"
             />
           </FormField>
-          
+
           <FormField label="Nationality">
-            <Select 
-              value={data.nationality} 
+            <Select
+              value={data.nationality}
               onValueChange={(value) => updateField('nationality', value)}
             >
               <SelectTrigger>
@@ -223,12 +536,12 @@ function ScholarForm({
               </SelectContent>
             </Select>
           </FormField>
-          
+
           <FormField label="Current Affiliation">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Select 
-                value={data.currentAffiliationId} 
+              <Select
+                value={data.currentAffiliationId}
                 onValueChange={(value) => {
                   const inst = mockInstitutions.find((i) => i.id === value);
                   updateField('currentAffiliationId', value);
@@ -255,10 +568,10 @@ function ScholarForm({
           <BookOpen className="h-4 w-4" />
           Academic Profile
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField label="Primary Research Area" required>
-            <Select 
-              value={data.researchAreas?.[0]} 
+            <Select
+              value={data.researchAreas?.[0]}
               onValueChange={(value) => updateField('researchAreas', [value])}
             >
               <SelectTrigger>
@@ -271,24 +584,10 @@ function ScholarForm({
               </SelectContent>
             </Select>
           </FormField>
-          
-          <FormField label="Secondary Research Areas">
-            <TagSelector 
-              selectedTags={data.researchAreas?.slice(1).map((ra) => 
-                mockTags.find((t) => t.name === ra)?.id || ''
-              ).filter(Boolean) || []}
-              onChange={(tags) => {
-                const primary = data.researchAreas?.[0];
-                const secondaryNames = tags.map((id) => mockTags.find((t) => t.id === id)?.name).filter((name): name is string => !!name);
-                updateField('researchAreas', [primary, ...secondaryNames].filter(Boolean));
-              }}
-              category="research"
-            />
-          </FormField>
-          
+
           <FormField label="Highest Degree">
-            <Select 
-              value={data.highestDegree} 
+            <Select
+              value={data.highestDegree}
               onValueChange={(value) => updateField('highestDegree', value)}
             >
               <SelectTrigger>
@@ -301,9 +600,9 @@ function ScholarForm({
               </SelectContent>
             </Select>
           </FormField>
-          
+
           <FormField label="Year of PhD Completion">
-            <Input 
+            <Input
               type="number"
               min={1900}
               max={2024}
@@ -315,22 +614,20 @@ function ScholarForm({
         </div>
       </div>
 
-      {/* Classification Tags */}
+      {/* Assign Tags */}
       <div className="form-section">
         <h3 className="form-section-title flex items-center gap-2">
-          <Award className="h-4 w-4" />
-          Classification Tags
+          <TagIcon className="h-4 w-4" />
+          Assign Tags
         </h3>
-        <TagSelector 
-          selectedTags={[
-            ...(data.honors?.map((h) => mockTags.find((t) => t.name === h)?.id).filter((id): id is string => !!id) || []),
-            ...(data.memberships?.map((m) => mockTags.find((t) => t.name === m)?.id).filter((id): id is string => !!id) || []),
-          ]}
-          onChange={(tags) => {
-            const selectedTags = tags.map((id) => mockTags.find((t) => t.id === id)).filter((t): t is Tag => !!t);
-            updateField('honors', selectedTags.filter((t) => t.category === 'honors').map((t) => t.name));
-            updateField('memberships', selectedTags.filter((t) => t.category === 'memberships').map((t) => t.name));
-          }}
+        <p className="text-sm text-muted-foreground mb-4">
+          Assign classification tags to this scholar. Tags are grouped by sub-dimension with different colors for Risk vs Business tags.
+        </p>
+        <AssignTagSelector
+          entityType="scholar"
+          assignedTags={assignedTags}
+          onChange={onAssignedTagsChange}
+          classDefs={classDefs}
         />
       </div>
 
@@ -338,7 +635,7 @@ function ScholarForm({
       <div>
         <h3 className="form-section-title">Biography</h3>
         <FormField label="" hint="Maximum 500 characters">
-          <Textarea 
+          <Textarea
             value={data.biography || ''}
             onChange={(e) => updateField('biography', e.target.value)}
             placeholder="Brief biography..."
@@ -354,48 +651,54 @@ function ScholarForm({
   );
 }
 
-function InstitutionForm({ 
-  data, 
-  onChange, 
-  errors 
-}: { 
-  data: Partial<Institution>; 
+function InstitutionForm({
+  data,
+  onChange,
+  errors,
+  assignedTags,
+  onAssignedTagsChange,
+  classDefs,
+}: {
+  data: Partial<Institution>;
   onChange: (data: Partial<Institution>) => void;
   errors: Record<string, string>;
+  assignedTags: AssignedTag[];
+  onAssignedTagsChange: (tags: AssignedTag[]) => void;
+  classDefs: ClassificationDef[];
 }) {
   const updateField = (field: string, value: any) => {
     onChange({ ...data, [field]: value });
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Basic Information */}
       <div className="form-section">
         <h3 className="form-section-title flex items-center gap-2">
-          <Building2 className="h-4 w-4" />
+          <Landmark className="h-4 w-4" />
           Basic Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField label="Official Name" required error={errors.name}>
-            <Input 
+            <Input
               value={data.name || ''}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="e.g., Massachusetts Institute of Technology"
             />
           </FormField>
-          
+
           <FormField label="Short Name/Acronym" hint="e.g., MIT, CAS">
-            <Input 
+            <Input
               value={data.shortName || ''}
               onChange={(e) => updateField('shortName', e.target.value)}
               placeholder="e.g., MIT"
             />
           </FormField>
-          
+
           <FormField label="Official Website">
             <div className="relative">
               <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
+              <Input
                 type="url"
                 className="pl-10"
                 value={data.website || ''}
@@ -404,10 +707,10 @@ function InstitutionForm({
               />
             </div>
           </FormField>
-          
+
           <FormField label="Institution Type">
-            <Select 
-              value={data.institutionType} 
+            <Select
+              value={data.institutionType}
               onValueChange={(value) => updateField('institutionType', value)}
             >
               <SelectTrigger>
@@ -429,10 +732,10 @@ function InstitutionForm({
           <MapPin className="h-4 w-4" />
           Geographic Information
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField label="Country/Region" required error={errors.country}>
-            <Select 
-              value={data.country} 
+            <Select
+              value={data.country}
               onValueChange={(value) => updateField('country', value)}
             >
               <SelectTrigger>
@@ -445,47 +748,47 @@ function InstitutionForm({
               </SelectContent>
             </Select>
           </FormField>
-          
+
           <FormField label="City" required error={errors.city}>
-            <Input 
+            <Input
               value={data.city || ''}
               onChange={(e) => updateField('city', e.target.value)}
               placeholder="e.g., Cambridge"
             />
           </FormField>
-          
+
           <FormField label="Street Address">
-            <Input 
+            <Input
               value={data.address || ''}
               onChange={(e) => updateField('address', e.target.value)}
               placeholder="Street address"
             />
           </FormField>
-          
+
           <FormField label="Postal Code">
-            <Input 
+            <Input
               value={data.postalCode || ''}
               onChange={(e) => updateField('postalCode', e.target.value)}
               placeholder="e.g., 02139"
             />
           </FormField>
-          
+
           <FormField label="Coordinates" hint="Optional - lat, long">
             <div className="flex gap-2">
-              <Input 
+              <Input
                 placeholder="Latitude"
                 value={data.coordinates?.lat || ''}
-                onChange={(e) => updateField('coordinates', { 
-                  ...data.coordinates, 
-                  lat: parseFloat(e.target.value) 
+                onChange={(e) => updateField('coordinates', {
+                  ...data.coordinates,
+                  lat: parseFloat(e.target.value)
                 })}
               />
-              <Input 
+              <Input
                 placeholder="Longitude"
                 value={data.coordinates?.lng || ''}
-                onChange={(e) => updateField('coordinates', { 
-                  ...data.coordinates, 
-                  lng: parseFloat(e.target.value) 
+                onChange={(e) => updateField('coordinates', {
+                  ...data.coordinates,
+                  lng: parseFloat(e.target.value)
                 })}
               />
             </div>
@@ -499,9 +802,9 @@ function InstitutionForm({
           <Calendar className="h-4 w-4" />
           Academic Profile
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FormField label="Established Year">
-            <Input 
+            <Input
               type="number"
               min={1000}
               max={2024}
@@ -510,83 +813,55 @@ function InstitutionForm({
               placeholder="e.g., 1861"
             />
           </FormField>
-          
+
           <FormField label="Total Faculty Count">
-            <Input 
+            <Input
               type="number"
               value={data.totalFaculty || ''}
               onChange={(e) => updateField('totalFaculty', parseInt(e.target.value))}
               placeholder="e.g., 12000"
             />
           </FormField>
-          
-          <FormField label="Primary Research Focus Areas">
-            <TagSelector 
-              selectedTags={data.researchFocusAreas?.map((ra) => 
-                mockTags.find((t) => t.name === ra)?.id || ''
-              ).filter(Boolean) || []}
-              onChange={(tags) => {
-                const names = tags.map((id) => mockTags.find((t) => t.id === id)?.name).filter((name): name is string => !!name);
-                updateField('researchFocusAreas', names);
-              }}
-              category="research"
-            />
-          </FormField>
         </div>
       </div>
 
-      {/* Classification Tags */}
-      <div>
+      {/* Assign Tags */}
+      <div className="form-section">
         <h3 className="form-section-title flex items-center gap-2">
-          <Award className="h-4 w-4" />
-          Classification Tags
+          <TagIcon className="h-4 w-4" />
+          Assign Tags
         </h3>
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium mb-2">Rankings & Tiers</p>
-            <TagSelector 
-              selectedTags={data.rankingTags?.map((rt) => 
-                mockTags.find((t) => t.name === rt)?.id || ''
-              ).filter(Boolean) || []}
-              onChange={(tags) => {
-                const names = tags.map((id) => mockTags.find((t) => t.id === id)?.name).filter((name): name is string => !!name);
-                updateField('rankingTags', names);
-              }}
-              category="rankings"
-            />
-          </div>
-          <div>
-            <p className="text-sm font-medium mb-2">Geographic Systems</p>
-            <TagSelector 
-              selectedTags={data.systemMembership?.map((sm) => 
-                mockTags.find((t) => t.name === sm)?.id || ''
-              ).filter(Boolean) || []}
-              onChange={(tags) => {
-                const names = tags.map((id) => mockTags.find((t) => t.id === id)?.name).filter((name): name is string => !!name);
-                updateField('systemMembership', names);
-              }}
-              category="geographic"
-            />
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Assign classification tags to this institution. Tags are grouped by sub-dimension with different colors for Risk vs Business tags.
+        </p>
+        <AssignTagSelector
+          entityType="institution"
+          assignedTags={assignedTags}
+          onChange={onAssignedTagsChange}
+          classDefs={classDefs}
+        />
       </div>
     </div>
   );
 }
 
 export function CreateEntity() {
-  const { 
-    setDraftEntity, 
+  const {
+    setDraftEntity,
     addToast,
-    setCurrentPage 
+    setCurrentPage,
+    scholarClassDefs,
+    institutionClassDefs,
   } = useAppStore();
-  
+
   const [entityType, setEntityType] = useState<'scholar' | 'institution'>('scholar');
   const [scholarData, setScholarData] = useState<Partial<Scholar>>({});
   const [institutionData, setInstitutionData] = useState<Partial<Institution>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [scholarAssignedTags, setScholarAssignedTags] = useState<AssignedTag[]>([]);
+  const [institutionAssignedTags, setInstitutionAssignedTags] = useState<AssignedTag[]>([]);
 
   // Auto-save draft every 30 seconds
   useEffect(() => {
@@ -676,7 +951,7 @@ export function CreateEntity() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -708,8 +983,8 @@ export function CreateEntity() {
 
       {/* Entity Type Selector */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center gap-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => setEntityType('scholar')}
               className={cn(
@@ -749,7 +1024,7 @@ export function CreateEntity() {
                 'w-12 h-12 rounded-full flex items-center justify-center',
                 entityType === 'institution' ? 'bg-primary text-primary-foreground' : 'bg-muted'
               )}>
-                <Building2 className="h-6 w-6" />
+                <Landmark className="h-6 w-6" />
               </div>
               <div className="text-left">
                 <p className={cn(
@@ -767,18 +1042,24 @@ export function CreateEntity() {
 
       {/* Form */}
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           {entityType === 'scholar' ? (
-            <ScholarForm 
+            <ScholarForm
               data={scholarData}
               onChange={setScholarData}
               errors={errors}
+              assignedTags={scholarAssignedTags}
+              onAssignedTagsChange={setScholarAssignedTags}
+              classDefs={scholarClassDefs}
             />
           ) : (
-            <InstitutionForm 
+            <InstitutionForm
               data={institutionData}
               onChange={setInstitutionData}
               errors={errors}
+              assignedTags={institutionAssignedTags}
+              onAssignedTagsChange={setInstitutionAssignedTags}
+              classDefs={institutionClassDefs}
             />
           )}
         </CardContent>
@@ -786,17 +1067,17 @@ export function CreateEntity() {
 
       {/* Bulk Tag Import */}
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Upload className="h-5 w-5" />
             Bulk Tag Import
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Import tags from Excel file for multiple entities
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+        <CardContent className="p-4 pt-0">
+          <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
             <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
             <p className="text-sm font-medium">Drag and drop your Excel file here</p>
             <p className="text-xs text-muted-foreground mt-1">
